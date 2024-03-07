@@ -1,6 +1,6 @@
 # kafka-stream-mock
 
-This is a simple tool to mock a source that streams data to a Kafka server. It supports flexible generation of fake data based on faker and other configurations using a YAML file. This is mainly intended to be used for development purposes.
+A simple tool to mock a source that generates and streams data to Kafka. It supports flexible generation of fake data based on faker and other configurations using a YAML file. This is mainly intended to be used for development purposes.
 
 ## How to Run
 ```
@@ -9,7 +9,24 @@ go run main.go <path-to-config.yaml>
 
 ## Configuration (YAML)
 
-### Structure:
+### Example Configuration File
+
+```yaml
+kafka: localhost:9092
+topic: test
+interval: 1000
+samples: 5
+format: csvheadless
+data:
+  - id=uuiddigit
+  - type=word
+  - value=randomint
+  - user=username
+  - ip=ipv4
+  - timestamp=timestamp
+```
+
+### Structure
 
 + `kafka`: Sets the host and port of the Kafka server.
   - **Options**: `<host>:<port>`
@@ -80,23 +97,6 @@ go run main.go <path-to-config.yaml>
 | username            | Generates a username.                                        |
 | word                | Generates a word.                                            |
 | yearstring          | Generates a year string.                                     |
-
-### Example Configuration File
-
-```yaml
-kafka: localhost:9092
-topic: test
-interval: 1000
-samples: 5
-format: csvheadless
-data:
-  - id=uuiddigit
-  - type=word
-  - value=randomint
-  - user=username
-  - ip=ipv4
-  - timestamp=timestamp
-```
 
 ## License
 The code in this repository is licensed under the [Apache Licence Version 2.0](LICENSE) by [Konstantinos Voulgaris](https://github.com/konvoulgaris).
