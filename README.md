@@ -7,6 +7,8 @@ A simple tool to mock a source that generates and streams data to Kafka. It supp
 go run main.go <path-to-config.yaml>
 ```
 
+You can also compile it and run it as a standalone executable but using go directly is more flexible for my usecase.
+
 ## Configuration (YAML)
 
 ### Example Configuration File
