@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/go-faker/faker/v4/pkg/options"
+	"github.com/segmentio/kafka-go"
 	"gopkg.in/yaml.v3"
 )
 
@@ -63,7 +64,11 @@ var fakerMap = map[string]func(...options.OptionFunc) string{
 }
 
 type Config struct {
-	Data []string `yaml:"data"`
+	Kafka    string   `yaml:"kafka"`
+	Interval int      `yaml:"interval"`
+	Samples  int      `yaml:"samples"`
+	Format   string   `yaml:"format"`
+	Data     []string `yaml:"data"`
 }
 
 type DataField struct {
@@ -89,16 +94,26 @@ func main() {
 	configFile, err := os.ReadFile("config.yaml")
 
 	if err != nil {
-		println("Error opening config file!")
-		panic(err)
+		log.Fatalln("Error reading config file:", err)
 	}
 
 	config := Config{}
 	err = yaml.Unmarshal(configFile, &config)
 
 	if err != nil {
-		println("Error parsing config file!")
-		panic(err)
+		log.Fatalln("Error parsing config file:", err)
+	}
+
+	if config.Interval <= 0 {
+		log.Fatalln("Invalid interval value:", config.Interval, "\nValid values are positive integers")
+	}
+
+	if config.Samples <= 0 {
+		log.Fatalln("Invalid samples value:", config.Samples, "\nValid values are positive integers")
+	}
+
+	if config.Format == "" || (config.Format != "json" && config.Format != "csv" && config.Format != "csvheadless") {
+		log.Fatalln("Invalid format value:", config.Format, "\nValid values are: 'json', 'csv', 'csvheadless'")
 	}
 
 	var dataFields []DataField
@@ -116,7 +131,14 @@ func main() {
 		}
 
 		value := fakerMap[key]()
-
 		println(dataField.Label, "=", value)
 	}
+
+	client, err := kafka.Dial("tcp", config.Kafka)
+
+	if err != nil {
+		log.Fatalln("Error connecting to Kafka:", err)
+	}
+
+	defer client.Close()
 }

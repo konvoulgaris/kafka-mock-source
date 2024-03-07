@@ -1,3 +1,7 @@
+kafka: localhost:9092
+interval: 100
+samples: 5
+format: "json"
 data:
   - id=uuiddigit
   - type=word
