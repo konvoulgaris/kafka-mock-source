@@ -150,7 +150,11 @@ func generateCSVData(dataFields []DataField, data []map[string]interface{}, head
 }
 
 func main() {
-	configFile, err := os.ReadFile("config.yaml")
+	if len(os.Args) != 2 {
+		log.Fatalln("Usage: go run main.go <path-to-config.yaml>")
+	}
+
+	configFile, err := os.ReadFile(os.Args[1])
 
 	if err != nil {
 		log.Fatalln("Error reading config file:", err)
