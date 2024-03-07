@@ -1,7 +1,8 @@
 kafka: localhost:9092
-interval: 100
+topic: test
+interval: 1000
 samples: 5
-format: "json"
+format: csvheadless
 data:
   - id=uuiddigit
   - type=word
@@ -9,4 +10,3 @@ data:
   - user=username
   - ip=ipv4
   - timestamp=timestamp
-  - unknown=gibberish

@@ -1,11 +1,16 @@
 package main
 
 import (
+	"bytes"
+	"context"
+	"encoding/csv"
+	"encoding/json"
 	"log"
 	"math/rand"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/go-faker/faker/v4/pkg/options"
@@ -65,6 +70,7 @@ var fakerMap = map[string]func(...options.OptionFunc) string{
 
 type Config struct {
 	Kafka    string   `yaml:"kafka"`
+	Topic    string   `yaml:"topic"`
 	Interval int      `yaml:"interval"`
 	Samples  int      `yaml:"samples"`
 	Format   string   `yaml:"format"`
@@ -90,6 +96,59 @@ func getDataField(line string) DataField {
 	}
 }
 
+func generateSample(dataFields []DataField) map[string]interface{} {
+	data := make(map[string]interface{})
+
+	for _, dataField := range dataFields {
+		fakeKey := dataField.Value
+
+		if _, ok := fakerMap[fakeKey]; !ok {
+			log.Println("Skipping invalid data field value:", fakeKey)
+			continue
+		}
+
+		data[dataField.Label] = fakerMap[fakeKey]()
+	}
+
+	return data
+}
+
+func generateCSVData(dataFields []DataField, data []map[string]interface{}, headless bool) []byte {
+	var buffer bytes.Buffer
+	writer := csv.NewWriter(&buffer)
+
+	if !headless {
+		var headers []string
+
+		for _, dataField := range dataFields {
+			headers = append(headers, dataField.Label)
+		}
+
+		err := writer.Write(headers)
+
+		if err != nil {
+			log.Println("Error writing CSV headers:", err)
+		}
+	}
+
+	for _, row := range data {
+		sample := make([]string, len(dataFields))
+
+		for i, dataField := range dataFields {
+			sample[i] = row[dataField.Label].(string)
+		}
+
+		err := writer.Write(sample)
+
+		if err != nil {
+			log.Println("Error writing CSV row:", err)
+		}
+	}
+
+	writer.Flush()
+	return buffer.Bytes()
+}
+
 func main() {
 	configFile, err := os.ReadFile("config.yaml")
 
@@ -102,6 +161,14 @@ func main() {
 
 	if err != nil {
 		log.Fatalln("Error parsing config file:", err)
+	}
+
+	if len(config.Kafka) <= 0 {
+		log.Fatalln("Invalid kafka value:", config.Kafka, "\nValid values are non-empty strings")
+	}
+
+	if len(config.Topic) <= 0 {
+		log.Fatalln("Invalid topic value:", config.Topic, "\nValid values are non-empty strings")
 	}
 
 	if config.Interval <= 0 {
@@ -122,23 +189,45 @@ func main() {
 		dataFields = append(dataFields, getDataField(line))
 	}
 
-	for _, dataField := range dataFields {
-		key := dataField.Value
-
-		if _, ok := fakerMap[key]; !ok {
-			log.Println("Skipping invalid data field value:", key)
-			continue
-		}
-
-		value := fakerMap[key]()
-		println(dataField.Label, "=", value)
-	}
-
-	client, err := kafka.Dial("tcp", config.Kafka)
+	client, err := kafka.DialLeader(context.Background(), "tcp", config.Kafka, config.Topic, 0)
 
 	if err != nil {
 		log.Fatalln("Error connecting to Kafka:", err)
 	}
 
 	defer client.Close()
+
+	for {
+		var payload []map[string]interface{}
+
+		for i := 0; i < config.Samples; i++ {
+			data := generateSample(dataFields)
+			payload = append(payload, data)
+		}
+
+		var message []byte
+
+		if config.Format == "json" {
+			jsonData, err := json.Marshal(payload)
+
+			if err != nil {
+				log.Println("Error marshalling messages to JSON:", err)
+			}
+
+			message = jsonData
+		} else if config.Format == "csv" {
+			message = generateCSVData(dataFields, payload, false)
+		} else {
+			message = generateCSVData(dataFields, payload, true)
+		}
+
+		n, err := client.Write(message)
+
+		if err != nil {
+			log.Println("Error writing messages to Kafka:", err)
+		}
+
+		log.Println("Wrote", n, "bytes to Kafka")
+		time.Sleep(time.Duration(config.Interval) * time.Millisecond)
+	}
 }
