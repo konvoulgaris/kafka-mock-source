@@ -22,7 +22,15 @@ kafka-stream-mock <path-to-config.yaml>
 
 ## Configuration (YAML)
 
-### Example Configuration File
+### Example Configuration File for Stock Price Scenario
+This configuration file, along with the `symbols.json` provided in the repository, generates mock stock data with:
++ `previousPrice`: Float value representing the previous price of the stock.
++ `currentPrice`: Float value representing the current price of the stock.
++ `marketConfidence`: Factor value representing the market confidence.
++ `latestHeadline`: Random sentence representing the latest headline regarding the stock at that time.
++ `timestamp`: The time that the stock buy/sale was recorded.
++ `ticker`: From the `correlation` settings, the ticker symbol of the stock. Sourced from the `symbols.json` file.
+
 
 ```yaml
 kafka: localhost:9092
@@ -31,13 +39,13 @@ interval: 1000
 samples: 5
 format: csvheadless
 correlation:
-  label: userId
+  label: ticker
   source: ./symbols.json
 data:
-  - ip=ipv4
-  - mac=macaddress
-  - lat=latitude
-  - lon=longitude
+  - previousPrice=randomfloat
+  - currentPrice=randomfloat
+  - marketConfidence=randomfactor
+  - latestHeadline=sentence
   - timestamp=timestamp
 ```
 
