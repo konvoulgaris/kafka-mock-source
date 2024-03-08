@@ -4,11 +4,21 @@ A simple tool to mock a source that generates and streams data to Kafka. It supp
 
 ## How to Run
 
-```
-go run main.go <path-to-config.yaml>
+### 1. Compile the Program
+
+```bash
+go build
 ```
 
-You can also compile it and run it as a standalone executable but using go directly is more flexible for my usecase.
+### 2. Copy it to the System Path
+```bash
+sudo cp kafka-stream-mock /usr/local/bin
+```
+
+### 3. Run it
+```bash
+kafka-stream-mock <path-to-config.yaml>
+```
 
 ## Configuration (YAML)
 

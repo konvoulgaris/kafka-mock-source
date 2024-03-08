@@ -161,7 +161,7 @@ func generateCSVData(dataFields []DataField, data []map[string]interface{}, head
 
 func main() {
 	if len(os.Args) != 2 {
-		log.Fatalln("Usage: go run main.go <path-to-config.yaml>")
+		log.Fatalln("Usage: kafka-stream-mock <path-to-config.yaml>")
 	}
 
 	configFile, err := os.ReadFile(os.Args[1])
