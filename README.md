@@ -18,17 +18,16 @@ You can also compile it and run it as a standalone executable but using go direc
 kafka: localhost:9092
 topic: test
 interval: 1000
-samples: 10
+samples: 5
 format: csvheadless
 correlation:
   label: userId
   amount: 5
 data:
-  - id=uuiddigit
-  - type=word
-  - value=randomint
-  - user=username
   - ip=ipv4
+  - mac=macaddress
+  - lat=latitude
+  - lon=longitude
   - timestamp=timestamp
 ```
 
