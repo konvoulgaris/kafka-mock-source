@@ -221,7 +221,7 @@ func main() {
 		log.Fatalln("Invalid correlation amount value:", config.Correlation.Amount, "\nValid values are positive integers")
 	} else if config.Correlation.Amount > 0 && config.Correlation.Label == "" {
 		log.Fatalln("Invalid correlation label value:", config.Correlation.Label, "\nValid values are non-empty strings")
-	} else {
+	} else if config.Correlation.Amount > 0 && config.Correlation.Label != "" {
 		dataFields = append(dataFields, DataField{
 			Label: config.Correlation.Label,
 			Value: "correlate",
