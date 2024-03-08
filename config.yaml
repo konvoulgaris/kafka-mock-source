@@ -5,7 +5,7 @@ samples: 5
 format: csvheadless
 correlation:
   label: userId
-  amount: 5
+  source: ./symbols.json
 data:
   - ip=ipv4
   - mac=macaddress

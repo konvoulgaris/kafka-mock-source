@@ -75,6 +75,7 @@ var fakerMap = map[string]func(...options.OptionFunc) string{
 type ConfigCorrelation struct {
 	Amount int    `yaml:"amount"`
 	Label  string `yaml:"label"`
+	Source string `yaml:"source"`
 }
 
 type Config struct {
@@ -217,19 +218,40 @@ func main() {
 		log.Fatalln("No valid data fields found in config file")
 	}
 
-	if config.Correlation.Amount <= 0 && config.Correlation.Label != "" {
-		log.Fatalln("Invalid correlation amount value:", config.Correlation.Amount, "\nValid values are positive integers")
-	} else if config.Correlation.Amount > 0 && config.Correlation.Label == "" {
-		log.Fatalln("Invalid correlation label value:", config.Correlation.Label, "\nValid values are non-empty strings")
-	} else if config.Correlation.Amount > 0 && config.Correlation.Label != "" {
+	if config.Correlation.Label != "" {
+		if config.Correlation.Amount > 0 && config.Correlation.Source != "" {
+			log.Fatalln("Invalid correlation settings:", config.Correlation, "\nYou cannot have both amount and source fields set at the same time")
+		} else if config.Correlation.Amount <= 0 && config.Correlation.Source == "" {
+			log.Fatalln("Invalid correlation settings:", config.Correlation, "\nYou need to have either amount or source field set")
+		} else if config.Correlation.Amount > 0 {
+			for i := 0; i < config.Correlation.Amount; i++ {
+				correlationIds = append(correlationIds, faker.UUIDDigit())
+			}
+		} else if config.Correlation.Source != "" {
+			file, err := os.ReadFile(config.Correlation.Source)
+
+			if err != nil {
+				log.Fatalln("Error reading correlation source file:", err)
+			}
+
+			var jsonData []string
+			err = json.Unmarshal(file, &jsonData)
+
+			if err != nil {
+				log.Fatalln("Error parsing correlation source file:", err, "\nSource file should contain a list of strings in JSON format")
+			}
+
+			if len(jsonData) <= 0 {
+				log.Fatalln("Correlation source file is empty")
+			}
+
+			correlationIds = jsonData
+		}
+
 		dataFields = append(dataFields, DataField{
 			Label: config.Correlation.Label,
 			Value: "correlate",
 		})
-
-		for i := 0; i < config.Correlation.Amount; i++ {
-			correlationIds = append(correlationIds, faker.UUIDDigit())
-		}
 	}
 
 	client, err := kafka.DialLeader(context.Background(), "tcp", config.Kafka, config.Topic, 0)

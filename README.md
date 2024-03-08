@@ -32,7 +32,7 @@ samples: 5
 format: csvheadless
 correlation:
   label: userId
-  amount: 5
+  source: ./symbols.json
 data:
   - ip=ipv4
   - mac=macaddress
@@ -63,9 +63,13 @@ data:
     - **Options**: String
   - `amount`: Defines the size of the pool of correlation IDs available for selection. If set to 5, each sample can correlate with any of those 5 IDs.
     - **Options**: Positive Integers
+  - `source`: Defines a source file from where we get the correlation IDs from, instead of generating them randomly.
+    - **Options**: A path to valid JSON file of an array of strings.
 
 + `data`: Defines the types of data to be generated for each entry.
   - **Options**: List of key-value pairs
+
+**NOTE:** `correlation.amount` and `correlation.source` cannot be set at the same time.
 
 ### Supported Data Types
 
