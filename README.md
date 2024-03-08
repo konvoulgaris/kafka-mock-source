@@ -18,8 +18,11 @@ You can also compile it and run it as a standalone executable but using go direc
 kafka: localhost:9092
 topic: test
 interval: 1000
-samples: 5
+samples: 10
 format: csvheadless
+correlation:
+  label: userId
+  amount: 5
 data:
   - id=uuiddigit
   - type=word
@@ -45,6 +48,12 @@ data:
 
 + `format`: Specifies the format of the data to be published (json, csv, or csvheadless).
   - **Options**: json, csv, csvheadless
+
++ `correlation`: Defines the correlation settings for generating correlated data.
+  - `label`: Specifies the data field label that will be appened to the generated data.
+    - **Options**: String
+  - `amount`: Defines the size of the pool of correlation IDs available for selection. If set to 5, each sample can correlate with any of those 5 IDs.
+    - **Options**: Positive Integers
 
 + `data`: Defines the types of data to be generated for each entry.
   - **Options**: List of key-value pairs
@@ -83,7 +92,9 @@ data:
 | paragraph           | Generates a paragraph of text.                               |
 | password            | Generates a password.                                        |
 | phonenumber         | Generates a phone number.                                    |
-| randomint           | Generates a random integer.                                  |
+| randomint           | Generates a random integer in the 0 to 100 range.            |
+| randomfloat         | Generates a random float in the 0 to 100 range.              |
+| randomfactor        | Generates a random factor.                                   |
 | randomunixtime      | Generates a random Unix time.                                |
 | sentence            | Generates a sentence.                                        |
 | timestring          | Generates a time string.                                     |

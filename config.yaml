@@ -3,10 +3,12 @@ topic: test
 interval: 1000
 samples: 5
 format: csvheadless
+correlation:
+  label: userId
+  amount: 5
 data:
-  - id=uuiddigit
-  - type=word
-  - value=randomint
-  - user=username
   - ip=ipv4
+  - mac=macaddress
+  - lat=latitude
+  - lon=longitude
   - timestamp=timestamp

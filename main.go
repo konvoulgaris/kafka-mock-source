@@ -18,6 +18,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var correlationIds []string
+
 var fakerMap = map[string]func(...options.OptionFunc) string{
 	"amountwithcurrency":  faker.AmountWithCurrency,
 	"ccnumber":            faker.CCNumber,
@@ -50,6 +52,8 @@ var fakerMap = map[string]func(...options.OptionFunc) string{
 	"password":            faker.Password,
 	"phonenumber":         faker.Phonenumber,
 	"randomint":           func(...options.OptionFunc) string { return strconv.Itoa(rand.Intn(101)) },
+	"randomfloat":         func(...options.OptionFunc) string { return strconv.FormatFloat(rand.Float64()*100, 'f', -1, 64) },
+	"randomfactor":        func(...options.OptionFunc) string { return strconv.FormatFloat(rand.Float64(), 'f', -1, 64) },
 	"randomunixtime":      func(...options.OptionFunc) string { return strconv.FormatInt(faker.RandomUnixTime(), 10) },
 	"sentence":            faker.Sentence,
 	"timestring":          faker.TimeString,
@@ -68,13 +72,19 @@ var fakerMap = map[string]func(...options.OptionFunc) string{
 	"yearstring":          faker.YearString,
 }
 
+type ConfigCorrelation struct {
+	Amount int    `yaml:"amount"`
+	Label  string `yaml:"label"`
+}
+
 type Config struct {
-	Kafka    string   `yaml:"kafka"`
-	Topic    string   `yaml:"topic"`
-	Interval int      `yaml:"interval"`
-	Samples  int      `yaml:"samples"`
-	Format   string   `yaml:"format"`
-	Data     []string `yaml:"data"`
+	Kafka       string            `yaml:"kafka"`
+	Topic       string            `yaml:"topic"`
+	Interval    int               `yaml:"interval"`
+	Samples     int               `yaml:"samples"`
+	Format      string            `yaml:"format"`
+	Correlation ConfigCorrelation `yaml:"correlation"`
+	Data        []string          `yaml:"data"`
 }
 
 type DataField struct {
@@ -102,8 +112,8 @@ func generateSample(dataFields []DataField) map[string]interface{} {
 	for _, dataField := range dataFields {
 		fakeKey := dataField.Value
 
-		if _, ok := fakerMap[fakeKey]; !ok {
-			log.Println("Skipping invalid data field value:", fakeKey)
+		if fakeKey == "correlate" {
+			data[dataField.Label] = correlationIds[rand.Intn(len(correlationIds))]
 			continue
 		}
 
@@ -190,7 +200,36 @@ func main() {
 	var dataFields []DataField
 
 	for _, line := range config.Data {
-		dataFields = append(dataFields, getDataField(line))
+		temp := getDataField(line)
+
+		if _, ok := fakerMap[temp.Value]; !ok {
+			log.Fatalln("Invalid data field value:", temp.Value, "\nSee README.md for a list of valid values")
+		}
+
+		if config.Correlation.Label == temp.Label {
+			log.Fatalln("Invalid data field label:", temp.Label, "\nThat label is a reserved name used for data correlation based on your config.\nPlease use a different label.")
+		}
+
+		dataFields = append(dataFields, temp)
+	}
+
+	if len(dataFields) <= 0 {
+		log.Fatalln("No valid data fields found in config file")
+	}
+
+	if config.Correlation.Amount <= 0 && config.Correlation.Label != "" {
+		log.Fatalln("Invalid correlation amount value:", config.Correlation.Amount, "\nValid values are positive integers")
+	} else if config.Correlation.Amount > 0 && config.Correlation.Label == "" {
+		log.Fatalln("Invalid correlation label value:", config.Correlation.Label, "\nValid values are non-empty strings")
+	} else {
+		dataFields = append(dataFields, DataField{
+			Label: config.Correlation.Label,
+			Value: "correlate",
+		})
+
+		for i := 0; i < config.Correlation.Amount; i++ {
+			correlationIds = append(correlationIds, faker.UUIDDigit())
+		}
 	}
 
 	client, err := kafka.DialLeader(context.Background(), "tcp", config.Kafka, config.Topic, 0)
