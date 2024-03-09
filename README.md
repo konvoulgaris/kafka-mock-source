@@ -12,12 +12,12 @@ go build
 
 ### 2. Copy it to the System Path
 ```bash
-sudo cp kafka-stream-mock /usr/local/bin
+sudo cp kafka-mock-source /usr/local/bin
 ```
 
 ### 3. Run it
 ```bash
-kafka-stream-mock <path-to-config.yaml>
+kafka-mock-source <path-to-config.yaml>
 ```
 
 ## Configuration (YAML)
