@@ -21,4 +21,4 @@
 go.work
 
 # Executable
-kafka-stream-mock
+kafka-mock-source
