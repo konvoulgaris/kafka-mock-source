@@ -1,4 +1,4 @@
-# kafka-stream-mock
+# kafka-mock-source
 
 A simple tool to mock a source that generates and streams data to Kafka. It supports flexible generation of fake data based on faker and other configurations using a YAML file. This is mainly intended to be used for development purposes.
 
